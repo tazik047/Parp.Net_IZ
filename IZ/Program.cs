@@ -9,7 +9,7 @@ namespace IZ
 {
     class Program
     {
-        private const int MATRIX_SIZE = 512;
+        private const int MATRIX_SIZE = 2048*4;
         static void Main(string[] args)
         {
             var rnd = new Random();
@@ -20,15 +20,31 @@ namespace IZ
             var m2 = new Matrix(MATRIX_SIZE);
             m2.FillMatrix(rnd);
 
+
+            var m1Fast = new MatrixFast(MATRIX_SIZE);
+            m1Fast.FillMatrix(rnd);
+            var m2Fast = new MatrixFast(MATRIX_SIZE);
+            m2Fast.FillMatrix(rnd);
+
+
+            //m2.Print();
+            //m2Fast.Print();
+
             int row, col;
             
             st.Restart();
             int max = m2.Max(out row, out col);
             st.Stop();
-            Console.WriteLine("Max value of matrix2: m[{0}][{1}] = {2}\n", row, col, max);
-            Console.WriteLine("Время для поиска максимального элемента: {0}", st.ElapsedMilliseconds);
+            Console.WriteLine("Max value of matrix2: m[{0}][{1}] = {2}", row, col, max);
+            Console.WriteLine("Время для поиска максимального элемента без SIMD: {0}", st.ElapsedMilliseconds);
 
-            int[] vector = new int[MATRIX_SIZE];
+            st.Restart();
+            float maxFast = m2Fast.Max(out row, out col);
+            st.Stop();
+            Console.WriteLine("Max value of matrix2Fast: m[{0}][{1}] = {2}", row, col, maxFast);
+            Console.WriteLine("Время для поиска максимального элемента c SIMD: {0}", st.ElapsedMilliseconds);
+
+            /*int[] vector = new int[MATRIX_SIZE];
             for (int i = 0; i < MATRIX_SIZE; i++)
             {
                 vector[i] = rnd.Next(100);
@@ -48,7 +64,7 @@ namespace IZ
             st.Restart();
             var m4 = m1.MultType2(m2);
             st.Stop();
-            Console.WriteLine("Время для умножения 2 способом: {0}", st.ElapsedMilliseconds);
+            Console.WriteLine("Время для умножения 2 способом: {0}", st.ElapsedMilliseconds);*/
         }
 
 
