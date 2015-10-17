@@ -7,110 +7,44 @@ using System.Threading.Tasks;
 
 namespace IZ
 {
-    class Matrix
+    internal class Matrix
     {
-        private readonly int[] _mas;
+        private readonly float[] _mas;
         private readonly int _size;
 
         public Matrix(int size)
         {
             _size = size;
-            _mas = new int[size*size];
+            _mas = new float[size*size];
         }
 
-        public int this[int row, int col]
+        public float Max(out int row, out int col)
         {
-            get { return _mas[row*_size + col]; }
-            set { _mas[row*_size + col] = value; }
-        }
-
-        public void FillMatrix()
-        {
-            var rnd = new Random();
-            FillMatrix(rnd);
-        }
-
-        public void FillMatrix(Random rnd)
-        {
-            for (int i = 0; i < _size; i++)
+            var max = float.MinValue;
+            row = -1;
+            for (int i = 0; i < _size*_size; i++)
             {
-                for (int j = 0; j < _size; j++)
+                if (_mas[i] > max)
                 {
-                    this[i, j] = rnd.Next(100);
+                    max = _mas[i];
+                    row = i;
                 }
             }
-        }
-
-        public void Print()
-        {
-            Console.WriteLine("Start print Matrix:");
-            for (var i = 0; i < _size; i++)
-            {
-                for (int j = 0; j < _size; j++)
-                {
-                    Console.Write("{0}\t", this[i, j]);
-                }
-                Console.WriteLine();
-            }
-            Console.WriteLine("End print Matrix.\n");
-        }
-
-        public int Max(out int row, out int col)
-        {
-            var max = int.MinValue;
-            row = col = -1;
-            for (var i = 0; i < _size; i++)
-            {
-                for (int j = 0; j < _size; j++)
-                {
-                    if (this[i, j] > max)
-                    {
-                        max = this[i, j];
-                        row = i;
-                        col = j;
-                    }
-                }
-            }
+            col = row % _size;
+            row /= _size;
             return max;
         }
 
-        public static Matrix operator +(Matrix m1, Matrix m2)
+        public float[] Mult(float[] vector)
         {
-            var res = new Matrix(m1._size);
-            for (int i = 0; i < m1._size; i++)
-            {
-                for (int j = 0; j < m1._size; j++)
-                {
-                    res[i, j] = m1[i, j] + m2[i, j];
-                }
-            }
-            return res;
-        }
-
-        public static Matrix operator -(Matrix m1, Matrix m2)
-        {
-            var res = new Matrix(m1._size);
-            for (int i = 0; i < m1._size; i++)
-            {
-                for (int j = 0; j < m1._size; j++)
-                {
-                    res[i, j] = m1[i, j] - m2[i, j];
-                }
-            }
-            return res;
-        }
-
-        public int[] Mult(int[] vector)
-        {
-            var res = new int[_size];
+            var res = new float[_size];
             for (var i = 0; i < _size; i++)
             {
-                var sum = 0;
+                res[i] = 0;
                 for (var j = 0; j < _size; j++)
                 {
-                    sum += this[i, j] * vector[j];
+                    res[i] += this[i, j]*vector[j];
                 }
-                res[i] = sum;
             }
             return res;
         }
@@ -125,13 +59,16 @@ namespace IZ
                     result[i, j] = 0;
                     for (var k = 0; k < _size; k++)
                     {
-                        result[i, j] += this[i, k] * m[k, j];
+                        result[i, j] += this[i, k]*m[k, j];
                     }
                 }
             }
             return result;
         }
 
+        /// <summary>
+        /// Алгоритм Штрассена
+        /// </summary>
         public Matrix MultType2(Matrix m)
         {
             if (_size <= 32)
@@ -155,9 +92,35 @@ namespace IZ
             return Combine(c11, c12, c21, c22);
         }
 
+        public static Matrix operator +(Matrix m1, Matrix m2)
+        {
+            var res = new Matrix(m1._size);
+            for (int i = 0; i < m1._size; i++)
+            {
+                for (int j = 0; j < m1._size; j++)
+                {
+                    res[i, j] = m1[i, j] + m2[i, j];
+                }
+            }
+            return res;
+        }
+
+        public static Matrix operator -(Matrix m1, Matrix m2)
+        {
+            var res = new Matrix(m1._size);
+            for (int i = 0; i < m1._size*m1._size; i++)
+            {
+                for (int j = 0; j < m1._size; j++)
+                {
+                    res[i, j] = m1[i, j] - m2[i, j];
+                }
+            }
+            return res;
+        }
+
         private Tuple<Matrix, Matrix, Matrix, Matrix> DevideMatrix()
         {
-            var halfSize = _size / 2;
+            var halfSize = _size/2;
             var m1 = new Matrix(halfSize);
             var m2 = new Matrix(halfSize);
             var m3 = new Matrix(halfSize);
@@ -178,7 +141,7 @@ namespace IZ
         private Matrix Combine(Matrix c11, Matrix c12, Matrix c21, Matrix c22)
         {
             var res = new Matrix(_size);
-            var halfSize = _size / 2;
+            var halfSize = _size/2;
             for (int i = 0; i < halfSize; i++)
             {
                 for (int j = 0; j < halfSize; j++)
@@ -205,11 +168,44 @@ namespace IZ
             {
                 for (int j = 0; j < _size; j++)
                 {
-                    if(this[i,j]!=m[i,j])
+                    if (!this[i, j].Equals(m[i, j]))
                         return false;
                 }
             }
             return true;
+        }
+
+
+
+        public float this[int row, int col]
+        {
+            get { return _mas[row * _size + col]; }
+            set { _mas[row * _size + col] = value; }
+        }
+
+        public void FillMatrix(Random rnd)
+        {
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    this[i, j] = rnd.Next(10);
+                }
+            }
+        }
+
+        public void Print()
+        {
+            Console.WriteLine("Начало матрицы:");
+            for (var i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    Console.Write("{0}\t", this[i, j]);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("Конец матрицы.\n");
         }
 
         public override int GetHashCode()
