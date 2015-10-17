@@ -103,11 +103,15 @@ namespace IZ
             for (var i = 0; i < counts; i++)
             {
                 newMax = Vector4.Max(this[i], max);
-                max = newMax - max;
+                /*max = newMax - max;
                 if (max.X != 0) indexes.X = i;
                 if (max.Y != 0) indexes.Y = i;
                 if (max.Z != 0) indexes.Z = i;
-                if (max.W != 0) indexes.W = i;
+                if (max.W != 0) indexes.W = i;*/
+                if (max.X < newMax.X) indexes.X = i;
+                if (max.Y <newMax.Y) indexes.Y = i;
+                if (max.Z <newMax.Z) indexes.Z = i;
+                if (max.W < newMax.W) indexes.W = i;
                 max = newMax;
             }
             float max1, max2, ind1, ind2;
