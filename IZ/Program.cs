@@ -9,20 +9,21 @@ namespace IZ
 {
     class Program
     {
-        private const int MATRIX_SIZE = 512;
 
         static void Main(string[] args)
         {
             var rnd = new Random();
             var st = new Stopwatch();
+            var MATRIX_SIZE = 64;
 
+            Console.WriteLine("Размер матрицы: {0}", MATRIX_SIZE);
             var m1 = new Matrix(MATRIX_SIZE);
             m1.FillMatrix(rnd);
             var m2 = new Matrix(MATRIX_SIZE);
             m2.FillMatrix(rnd);
 
             int row, col;
-            
+
             st.Restart();
             float max = m2.Max(out row, out col);
             st.Stop();
@@ -39,9 +40,9 @@ namespace IZ
             float[] res = m1.Mult(vector);
             st.Stop();
             Console.WriteLine("Время для умножения на вектор: {0} (такты)", st.ElapsedTicks);
-            
-            
-            st.Start();
+
+
+            st.Restart();
             Matrix m3 = m1.MultType1(m2);
             st.Stop();
             Console.WriteLine("Время для умножения 1 способом: {0} (мс)", st.ElapsedMilliseconds);
@@ -52,10 +53,9 @@ namespace IZ
             Console.WriteLine("Время для умножения 2 способом: {0} (мс)", st.ElapsedMilliseconds);
 
             Console.WriteLine("Матрицы {0}равны.", m3.Equals(m4) ? "" : "НЕ ");
+
             Console.ReadLine();
         }
-
-
 
         static void Print(float[] vector, int size)
         {

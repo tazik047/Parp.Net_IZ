@@ -38,12 +38,12 @@ namespace IZ
         public float[] Mult(float[] vector)
         {
             var res = new float[_size];
-            for (var i = 0; i < _size; i++)
+            int i = 0;
+            for (var k = 0; k < _size;k++)
             {
-                res[i] = 0;
-                for (var j = 0; j < _size; j++)
+                for (int j = 0; j < _size; j++)
                 {
-                    res[i] += this[i, j]*vector[j];
+                    res[k] += _mas[i++]*vector[j];
                 }
             }
             return res;
@@ -108,7 +108,7 @@ namespace IZ
         public static Matrix operator -(Matrix m1, Matrix m2)
         {
             var res = new Matrix(m1._size);
-            for (int i = 0; i < m1._size*m1._size; i++)
+            for (int i = 0; i < m1._size; i++)
             {
                 for (int j = 0; j < m1._size; j++)
                 {
@@ -189,7 +189,9 @@ namespace IZ
             {
                 for (int j = 0; j < _size; j++)
                 {
-                    this[i, j] = rnd.Next(10);
+                    // При больших размерах матрицы результаты превышают допустимые диапазон float, поэтому 
+                    // выбрано такое ограничение для ячейки матрицы
+                    this[i, j] = rnd.Next(10); 
                 }
             }
         }
