@@ -59,7 +59,7 @@ namespace IZ
                     result[i, j] = 0;
                     for (var k = 0; k < _size; k++)
                     {
-                        result[i, j] += this[i, k]*m[k, j];
+                        result[i, j] += (float)Math.Round(this[i, k]*m[k, j]);
                     }
                 }
             }
@@ -87,7 +87,7 @@ namespace IZ
             var c11 = p1 + p4 - p5 + p7;
             var c12 = p3 + p5;
             var c21 = p2 + p4;
-            var c22 = p1 - p2 + p3 + p6;
+            var c22 = p1 + p3 - p2 + p6;
 
             return Combine(c11, c12, c21, c22);
         }
@@ -191,7 +191,8 @@ namespace IZ
                 {
                     // При больших размерах матрицы результаты превышают допустимые диапазон float, поэтому 
                     // выбрано такое ограничение для ячейки матрицы
-                    this[i, j] = rnd.Next(10); 
+                    //this[i, j] =  rnd.Next(10);
+                    this[i, j] = (float)rnd.NextDouble()*1000;
                 }
             }
         }
@@ -213,6 +214,95 @@ namespace IZ
         public override int GetHashCode()
         {
             return _mas.GetHashCode();
+        }
+
+        public static bool IsEqual(Matrix matrix1, Matrix matrix2, int size)
+        {
+            float min = 0;
+            float max = 0;
+            double diff;
+            for (var i = 0; i < size; i++)
+            {
+                for (var j = 0; j < size; j++)
+                {
+                    /*max = matrix1[i, j] >= matrix2[i, j] ? matrix1[i, j] : matrix2[i, j];
+                    min = matrix1[i, j] >= matrix2[i, j] ? matrix2[i, j] : matrix1[i, j];
+                    diff = Math.Pow(10, getError(matrix1[i, j], matrix2[i, j]));
+                    if (max - min > diff)
+                    {
+                        return false;
+                    }*/
+                    if(!eqFloat(matrix1[i,j],matrix2[i,j]))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+
+
+        private static int getError(float a, float b)
+        {
+            if (a < b)
+            {
+                return getError(b, a);
+            }
+            var isEnd = 0;
+            var res = 1;
+            b = 6;
+            while (a > 0 && isEnd < 2)
+            {
+                a /= 10;
+                res += b > 0 ? 0 : 1;
+                b--;
+                if (a < 10) isEnd++;
+            }
+            res += res >= 7 ? 1 : 0;
+            return res;
+        }
+
+        private static bool eqFloat(float a, float b)
+        {
+            return Math.Abs(PrepareFloat(a) - PrepareFloat(b))<=5;
+        }
+
+        private static long PrepareFloat(float f)
+        {
+            while (Math.Abs(f)<10000)
+            {
+                f *= 10;
+            }
+            while (Math.Abs(f) >= 100000)
+            {
+                f /= 10;
+            }
+            return Convert.ToInt64(Math.Truncate(f));
+            /*int maxLength = 7;
+            if (f < 0)
+            {
+                maxLength = 8;
+                str = "-" + str;
+            }
+            return str.Length > maxLength ? Convert.ToInt64(str.Substring(0, maxLength)) : Convert.ToInt64(str);*/
+        }
+
+
+        public float MaxAbs(out int row, out int col)
+        {
+            var max = 0f;
+            row = -1;
+            for (int i = 0; i < _size * _size; i++)
+            {
+                if (Math.Abs(_mas[i]) > Math.Abs(max))
+                {
+                    max = _mas[i];
+                    row = i;
+                }
+            }
+            col = row % _size;
+            row /= _size;
+            return max;
         }
     }
 }
