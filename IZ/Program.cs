@@ -18,7 +18,6 @@ namespace IZ
             var rnd = new Random();
 
             var MATRIX_SIZE = 64;
-            //var max = 0f;
 
             while (MATRIX_SIZE <= 2048)
             {
@@ -71,7 +70,7 @@ namespace IZ
                 Console.WriteLine((m3 - m4).MaxAbs(out row, out col));
                 Console.WriteLine();
 
-                Console.WriteLine("Матрицы {0}равны.", Matrix.IsEqual(m3,m4,MATRIX_SIZE) ? "" : "НЕ ");
+                Console.WriteLine("Матрицы {0}равны.", m3.Equals(m4) ? "" : "НЕ ");
                 Console.WriteLine();
                 //Console.ReadLine();
                 MATRIX_SIZE *= 2;
