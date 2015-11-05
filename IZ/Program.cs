@@ -66,13 +66,9 @@ namespace IZ
                     m4 = m1.MultType2(m2);
                 });
                 Console.WriteLine("Время для умножения 2 способом: {0} (мс)", minMilliseconds);
-
-                Console.WriteLine((m3 - m4).MaxAbs(out row, out col));
-                Console.WriteLine();
-
+                
                 Console.WriteLine("Матрицы {0}равны.", m3.Equals(m4) ? "" : "НЕ ");
                 Console.WriteLine();
-                //Console.ReadLine();
                 MATRIX_SIZE *= 2;
             }
             Console.ReadLine();
@@ -83,7 +79,7 @@ namespace IZ
         {
             long resM = long.MaxValue;
             long resT = long.MaxValue;
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 5; i++)
             {
                 st.Restart();
                 a();
