@@ -7,10 +7,14 @@ using System.Threading.Tasks;
 
 namespace IZ
 {
-    internal class Matrix
+    internal class Matrix : IMatrix<Matrix>
     {
-        private readonly float[] _mas;
-        private readonly int _size;
+        private float[] _mas;
+        private int _size;
+
+        public Matrix()
+        {
+        }
 
         public Matrix(int size)
         {
@@ -59,7 +63,7 @@ namespace IZ
                     result[i, j] = 0;
                     for (var k = 0; k < _size; k++)
                     {
-                        result[i, j] += (float)Math.Round(this[i, k]*m[k, j]);
+                        result[i, j] += this[i, k]*m[k, j];
                     }
                 }
             }
@@ -175,8 +179,6 @@ namespace IZ
             return true;
         }
 
-
-
         public float this[int row, int col]
         {
             get { return _mas[row * _size + col]; }
@@ -201,7 +203,7 @@ namespace IZ
             {
                 for (int j = 0; j < _size; j++)
                 {
-                    Console.Write("{0}\t", this[i, j]);
+                    Console.Write("{0:000.0000}  ", this[i, j]);
                 }
                 Console.WriteLine();
             }
@@ -231,22 +233,11 @@ namespace IZ
             return Convert.ToInt64(Math.Truncate(f));
         }
 
-
-        public float MaxAbs(out int row, out int col)
+        public void CreateMatrix(int size, Random rnd)
         {
-            var max = 0f;
-            row = -1;
-            for (int i = 0; i < _size * _size; i++)
-            {
-                if (Math.Abs(_mas[i]) > Math.Abs(max))
-                {
-                    max = _mas[i];
-                    row = i;
-                }
-            }
-            col = row % _size;
-            row /= _size;
-            return max;
+            _size = size;
+            _mas = new float[size * size];
+            FillMatrix(rnd);
         }
     }
 }
