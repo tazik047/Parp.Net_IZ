@@ -113,8 +113,6 @@ namespace IZ
         public float Max(out int row, out int col)
         {
             var max = new Vector4(float.MinValue);
-            var indexes = Vector4.Zero;
-            Vector4 newMax;
             int counts = _size * _size / 4;
             for (var i = 0; i < counts; i++)
             {
