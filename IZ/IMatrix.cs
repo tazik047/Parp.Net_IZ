@@ -23,6 +23,8 @@ namespace IZ
 
         void Print();
 
-        void CreateMatrix(int size, Random rnd);
+        void SetMas(float[] mas, int size);
+
+        float[] ToArray();
     }
 }

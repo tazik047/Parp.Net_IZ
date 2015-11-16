@@ -159,26 +159,6 @@ namespace IZ
             return res;
         }
 
-        public override bool Equals(object obj)
-        {
-            if (obj == null || GetType() != obj.GetType())
-            {
-                return false;
-            }
-
-            var m = obj as Matrix;
-
-            for (int i = 0; i < _size; i++)
-            {
-                for (int j = 0; j < _size; j++)
-                {
-                    if (!EqFloat(this[i, j], m[i, j]))
-                        return false;
-                }
-            }
-            return true;
-        }
-
         public float this[int row, int col]
         {
             get { return _mas[row * _size + col]; }
@@ -210,34 +190,22 @@ namespace IZ
             Console.WriteLine("Конец матрицы.\n");
         }
 
-        public override int GetHashCode()
-        {
-            return _mas.GetHashCode();
-        }
-
-        private static bool EqFloat(float a, float b)
-        {
-            return Math.Abs(PrepareFloat(a) - PrepareFloat(b))<=5;
-        }
-
-        private static long PrepareFloat(float f)
-        {
-            while (Math.Abs(f)<10000)
-            {
-                f *= 10;
-            }
-            while (Math.Abs(f) >= 100000)
-            {
-                f /= 10;
-            }
-            return Convert.ToInt64(Math.Truncate(f));
-        }
-
-        public void CreateMatrix(int size, Random rnd)
+        public void SetMas(float[] mas, int size)
         {
             _size = size;
             _mas = new float[size * size];
-            FillMatrix(rnd);
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    this[i, j] = mas[i * _size + j];
+                }
+            }
+        }
+
+        public float[] ToArray()
+        {
+            return _mas;
         }
     }
 }
