@@ -19,8 +19,6 @@ namespace IZ
         /// </summary>
         T MultType2(T m);
 
-        void FillMatrix(Random rnd);
-
         void Print();
 
         void SetMas(float[] mas, int size);

@@ -165,17 +165,6 @@ namespace IZ
             set { _mas[row * _size + col] = value; }
         }
 
-        public void FillMatrix(Random rnd)
-        {
-            for (int i = 0; i < _size; i++)
-            {
-                for (int j = 0; j < _size; j++)
-                {
-                    this[i, j] = (float)rnd.NextDouble()*1000;
-                }
-            }
-        }
-
         public void Print()
         {
             Console.WriteLine("Начало матрицы:");
