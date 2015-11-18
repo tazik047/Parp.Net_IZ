@@ -17,13 +17,10 @@ namespace IZ
         static void Main(string[] args)
         {
             var rnd = new Random();
-
             var MATRIX_SIZE = 64;
 
             while (MATRIX_SIZE <= 2048)
             {
-                IMatrix<Matrix> m1 = null, m2 = null, m3 = null, m4 = null;
-
                 Console.WriteLine("Размер матрицы: {0}", MATRIX_SIZE);
 
                 float[] masNumbers1 = new float[MATRIX_SIZE*MATRIX_SIZE];
@@ -54,12 +51,11 @@ namespace IZ
                 Console.WriteLine("Результаты {0}равны", Equals(res1, res2) ? "" : "НЕ ");
                 PrintSeparate();
                 PrintSeparate();
-
+                
                 Console.WriteLine();
                 MATRIX_SIZE *= 2;
             }
             Console.ReadLine();
-
         }
 
         public static void PrintSeparate()
