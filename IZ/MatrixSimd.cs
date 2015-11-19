@@ -9,17 +9,22 @@ namespace IZ
 {
     class MatrixSimd : IMatrix<MatrixSimd>
     {
-        private Vector4[] _mas;
+        private Vector<float>[] _mas;
         private int _size;
+
+        private static readonly int SimdSize = Vector<float>.Count; 
 
         public MatrixSimd()
         {
+            var t = Vector.IsHardwareAccelerated;
+            Console.WriteLine(t ? "Accelerated" : "No Accelerated");
+            Console.WriteLine(SimdSize == 4 ? "SSE включено" : "AVX включено");
         }
 
         public MatrixSimd(int size)
         {
             _size = size;
-            _mas = new Vector4[size * size / 4];
+            _mas = new Vector<float>[size * size / SimdSize];
         }
 
         public float this[int row, int col]
@@ -27,40 +32,19 @@ namespace IZ
             get
             {
                 var index = row * _size + col;
-                switch (index % 4)
-                {
-                    case 0:
-                        return _mas[index / 4].X;
-                    case 1:
-                        return _mas[index / 4].Y;
-                    case 2:
-                        return _mas[index / 4].Z;
-                    default:
-                        return _mas[index / 4].W;
-                }
+                return _mas[index/SimdSize][index%SimdSize];
             }
             set
             {
                 int index = row * _size + col;
-                switch (index % 4)
-                {
-                    case 0:
-                        _mas[index / 4].X = value;
-                        break;
-                    case 1:
-                        _mas[index / 4].Y = value;
-                        break;
-                    case 2:
-                        _mas[index / 4].Z = value;
-                        break;
-                    default:
-                        _mas[index / 4].W = value;
-                        break;
-                }
+                var newVectorArray = new float[SimdSize];
+                _mas[index/SimdSize].CopyTo(newVectorArray);
+                newVectorArray[index%SimdSize] = value;
+                _mas[index / SimdSize] = new Vector<float>(newVectorArray);
             }
         }
 
-        public Vector4 this[int index]
+        public Vector<float> this[int index]
         {
             get { return _mas[index]; }
             set { _mas[index] = value; }
@@ -83,7 +67,7 @@ namespace IZ
         public void SetMas(float[] mas, int size)
         {
             _size = size;
-            _mas = new Vector4[size * size / 4];
+            _mas = new Vector<float>[size * size / SimdSize];
             for (int i = 0; i < _size; i++)
             {
                 for (int j = 0; j < _size; j++)
@@ -95,61 +79,38 @@ namespace IZ
 
         public float[] ToArray()
         {
-            return _mas.SelectMany(vector => new List<float> { vector.X, vector.Y, vector.Z, vector.W }).ToArray();
+            var res = new float[_size*_size];
+            for (int i = 0; i < _size; i++)
+            {
+                for (int j = 0; j < _size; j++)
+                {
+                    res[i*_size + j] = this[i, j];
+                }
+            }
+            return res;
         }
 
         public float Max(out int row, out int col)
         {
-            var max = new Vector4(float.MinValue);
-            var indexes = Vector4.Zero;
-            for (var i = 0; i < _mas.Length; i++)
+            var max = float.MinValue;
+            row = -1;
+            for (int i = 0; i < _size * _size; i++)
             {
-                var newMax = Vector4.Max(this[i], max);
-                if (max.X < newMax.X) indexes.X = i;
-                if (max.Y < newMax.Y) indexes.Y = i;
-                if (max.Z < newMax.Z) indexes.Z = i;
-                if (max.W < newMax.W) indexes.W = i;
-                max = newMax;
+                if (this[i/_size, i%_size] > max)
+                {
+                    max = this[i / _size, i % _size];
+                    row = i;
+                }
             }
-            float max1, max2, ind1, ind2;
-            if (max.X > max.Y)
-            {
-                max1 = max.X;
-                ind1 = indexes.X * 4;
-            }
-            else
-            {
-                max1 = max.Y;
-                ind1 = indexes.Y * 4 + 1;
-            }
-            if (max.Z > max.W)
-            {
-                max2 = max.Z;
-                ind2 = indexes.Z * 4 + 2;
-            }
-            else
-            {
-                max2 = max.W;
-                ind2 = indexes.W * 4 + 3;
-            }
-            if (max1 > max2)
-            {
-                row = ((int)ind1) / _size;
-                col = ((int)ind1) % _size;
-            }
-            else
-            {
-                max1 = max2;
-                row = ((int)ind2) / _size;
-                col = ((int)ind2) % _size;
-            }
-            return max1;
+            col = row % _size;
+            row /= _size;
+            return max;
         }
 
         public static MatrixSimd operator +(MatrixSimd m1, MatrixSimd m2)
         {
             var res = new MatrixSimd(m1._size);
-            for (int i = 0; i < m1._size * m1._size / 4; i++)
+            for (int i = 0; i < m1._size * m1._size / SimdSize; i++)
             {
                 res[i] = m1[i] + m2[i];
             }
@@ -159,7 +120,7 @@ namespace IZ
         public static MatrixSimd operator -(MatrixSimd m1, MatrixSimd m2)
         {
             var res = new MatrixSimd(m1._size);
-            for (int i = 0; i < m1._size * m1._size / 4; i++)
+            for (int i = 0; i < m1._size * m1._size / SimdSize; i++)
             {
                 res[i] = m1[i] - m2[i];
             }
@@ -169,24 +130,25 @@ namespace IZ
         public float[] Mult(float[] v)
         {
             var res = new float[_size];
-            var vector = new Vector4[_size / 4];
+            var vector = new Vector<float>[_size / SimdSize];
             int i = 0;
             for (int j = 0; j < vector.Length; j++)
             {
-                vector[j] = new Vector4(v[i], v[i + 1], v[i + 2], v[i + 3]);
-                i += 4;
+                vector[j] = new Vector<float>(v, i);
+                i += SimdSize;
             }
 
             i = 0;
-
+            var sumArray = new float[SimdSize];
             for (var k = 0; k < _size; k++)
             {
-                var sum = Vector4.Zero;
+                var sum = Vector<float>.Zero;
                 for (int j = 0; j < vector.Length; j++)
                 {
                     sum += _mas[i++] * vector[j];
                 }
-                res[k] = sum.X + sum.Y + sum.Z + sum.W;
+                sum.CopyTo(sumArray);
+                res[k] = sumArray.Sum();
             }
             return res;
         }
@@ -209,17 +171,19 @@ namespace IZ
         {
             var result = new MatrixSimd(_size);
             var transposeMatrix = Transpose(m);
-            var lineLength = _size / 4;
+            var lineLength = _size / SimdSize;
+            var sumArray = new float[SimdSize];
             for (var i = 0; i < _size; i++)
             {
                 for (var j = 0; j < _size; j++)
                 {
-                    var temp = Vector4.Zero;
+                    var temp = Vector<float>.Zero;
                     for (var k = 0; k < lineLength; k++)
                     {
                         temp += this[i * lineLength + k] * transposeMatrix[j * lineLength + k];
                     }
-                    result[i, j] = temp.X + temp.Y + temp.Z + temp.W;
+                    temp.CopyTo(sumArray);
+                    result[i, j] = sumArray.Sum();
                 }
             }
             return result;
@@ -256,15 +220,15 @@ namespace IZ
             var m3 = new MatrixSimd(halfSize);
             var m4 = new MatrixSimd(halfSize);
             int k = 0;
-            int lineLength = _size / 4;
+            int lineLength = _size / SimdSize;
             for (int i = 0; i < halfSize; i++)
             {
-                for (int j = 0; j < halfSize / 4; j++)
+                for (int j = 0; j < halfSize / SimdSize; j++)
                 {
                     m1[k] = this[i * lineLength + j];
-                    m2[k] = this[i * lineLength + j + halfSize / 4];
-                    m3[k] = this[i * lineLength + j + _size * halfSize / 4];
-                    m4[k] = this[i * lineLength + j + (_size + 1) * halfSize / 4];
+                    m2[k] = this[i * lineLength + j + halfSize / SimdSize];
+                    m3[k] = this[i * lineLength + j + _size * halfSize / SimdSize];
+                    m4[k] = this[i * lineLength + j + (_size + 1) * halfSize / SimdSize];
                     k++;
                 }
             }
@@ -276,16 +240,16 @@ namespace IZ
             var res = new MatrixSimd(_size);
             var halfSize = _size / 2;
             int k = 0;
-            int lineLength = _size / 4;
+            int lineLength = _size / SimdSize;
 
             for (int i = 0; i < halfSize; i++)
             {
-                for (int j = 0; j < halfSize / 4; j++)
+                for (int j = 0; j < halfSize / SimdSize; j++)
                 {
                     res[i * lineLength + j] = c11[k];
-                    res[i * lineLength + j + halfSize / 4] = c12[k];
-                    res[i * lineLength + j + _size * halfSize / 4] = c21[k];
-                    res[i * lineLength + j + (_size + 1) * halfSize / 4] = c22[k];
+                    res[i * lineLength + j + halfSize / SimdSize] = c12[k];
+                    res[i * lineLength + j + _size * halfSize / SimdSize] = c21[k];
+                    res[i * lineLength + j + (_size + 1) * halfSize / SimdSize] = c22[k];
                     k++;
                 }
             }
