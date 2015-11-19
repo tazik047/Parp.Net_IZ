@@ -16,9 +16,6 @@ namespace IZ
 
         public MatrixSimd()
         {
-            var t = Vector.IsHardwareAccelerated;
-            Console.WriteLine(t ? "Accelerated" : "No Accelerated");
-            Console.WriteLine(SimdSize == 4 ? "SSE включено" : "AVX включено");
         }
 
         public MatrixSimd(int size)
@@ -93,15 +90,25 @@ namespace IZ
         public float Max(out int row, out int col)
         {
             var max = float.MinValue;
-            row = -1;
-            for (int i = 0; i < _size * _size; i++)
+            var maxVector = new Vector<float>(float.MinValue);
+            col = -1;
+            var indexes = Vector<int>.Zero;
+            for (int i = 0; i < _mas.Length; i++)
             {
-                if (this[i/_size, i%_size] > max)
+                var t = Vector.Max(maxVector, _mas[i]);
+                var changed = Vector.GreaterThan(t - maxVector, Vector<float>.Zero);
+                indexes = Vector.Negate(changed) * (new Vector<int>(i)) + (changed + Vector<int>.One) * indexes;
+                maxVector = t;
+            }
+            for (int i = 0; i < SimdSize; i++)
+            {
+                if (max < maxVector[i])
                 {
-                    max = this[i / _size, i % _size];
-                    row = i;
+                    max = maxVector[i];
+                    col = i;
                 }
             }
+            row = indexes[col]*SimdSize + col;
             col = row % _size;
             row /= _size;
             return max;
@@ -110,7 +117,7 @@ namespace IZ
         public static MatrixSimd operator +(MatrixSimd m1, MatrixSimd m2)
         {
             var res = new MatrixSimd(m1._size);
-            for (int i = 0; i < m1._size * m1._size / SimdSize; i++)
+            for (int i = 0; i < m1._mas.Length; i++)
             {
                 res[i] = m1[i] + m2[i];
             }
@@ -120,7 +127,7 @@ namespace IZ
         public static MatrixSimd operator -(MatrixSimd m1, MatrixSimd m2)
         {
             var res = new MatrixSimd(m1._size);
-            for (int i = 0; i < m1._size * m1._size / SimdSize; i++)
+            for (int i = 0; i < m1._mas.Length; i++)
             {
                 res[i] = m1[i] - m2[i];
             }
@@ -191,7 +198,7 @@ namespace IZ
 
         public MatrixSimd MultType2(MatrixSimd m)
         {
-            if (_size <= 128)
+            if (_size <= 256)
                 return MultType1(m);
             var a = DevideMatrix();
             var b = m.DevideMatrix();

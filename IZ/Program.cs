@@ -18,6 +18,7 @@ namespace IZ
         {
             var rnd = new Random();
             var MATRIX_SIZE = 64;
+            Console.WriteLine(Vector<float>.Count == 4 ? "SSE включено" : "AVX включено");
 
             while (MATRIX_SIZE <= 2048)
             {
