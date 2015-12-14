@@ -36,20 +36,26 @@ namespace IZ
                 TestMax<Matrix>(MATRIX_SIZE, masNumbers1);
                 Console.WriteLine("С SIMD:");
                 TestMax<MatrixSimd>(MATRIX_SIZE, masNumbers1);
+                Console.WriteLine("Параллельное выполнение:");
+                TestMax<MatrixParallel>(MATRIX_SIZE, masNumbers1);
                 PrintSeparate();
 
                 Console.WriteLine("Без SIMD:");
                 var res1 = TestMultVector<Matrix>(MATRIX_SIZE, masNumbers1, vector);
                 Console.WriteLine("С SIMD:");
                 var res2 = TestMultVector<MatrixSimd>(MATRIX_SIZE, masNumbers1, vector);
-                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) ? "" : "НЕ ");
+                Console.WriteLine("Параллельное выполнение:");
+                var res3 = TestMultVector<MatrixParallel>(MATRIX_SIZE, masNumbers1, vector);
+                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res1, res3) ? "" : "НЕ ");
                 PrintSeparate();
 
                 Console.WriteLine("Без SIMD:");
                 res1 = TestMultiply<Matrix>(MATRIX_SIZE, masNumbers1, masNumbers2);
                 Console.WriteLine("С SIMD:");
                 res2 = TestMultiply<MatrixSimd>(MATRIX_SIZE, masNumbers1, masNumbers2);
-                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) ? "" : "НЕ ");
+                Console.WriteLine("Параллельное выполнение:");
+                res3 = TestMultiply<MatrixParallel>(MATRIX_SIZE, masNumbers1, masNumbers2);
+                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res1, res3) ? "" : "НЕ ");
                 PrintSeparate();
                 PrintSeparate();
                 
@@ -93,7 +99,7 @@ namespace IZ
                 m4 = m1.MultType2(m2);
             });
             Console.WriteLine("Время для умножения 2 способом: {0} (мс)", minMilliseconds);
-
+            
             Console.WriteLine("Матрицы {0}равны.", Equals(m3.ToArray(), m4.ToArray()) ? "" : "НЕ ");
             return m4.ToArray();
         }
