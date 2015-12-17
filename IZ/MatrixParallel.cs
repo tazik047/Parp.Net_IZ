@@ -194,6 +194,12 @@ namespace IZ
 
         public MatrixParallel MultType2(MatrixParallel m)
         {
+            var depth = Environment.ProcessorCount;
+            return MultType2Parallel(m, ref depth);
+        }
+
+        private MatrixParallel MultType2Parallel(MatrixParallel m, ref int depthRemaining)
+        {
             if (_size <= 256)
             {
                 var result = new MatrixParallel(_size);
@@ -202,6 +208,17 @@ namespace IZ
             }
             var a = DevideMatrix();
             var b = m.DevideMatrix();
+
+            var p = new MatrixParallel[7];
+            var tasks = new Dictionary<int, Task>();
+
+            if (depthRemaining != 0)
+            {
+                depthRemaining--;
+                tasks.Add(1, Task.Run(() => (a.Item1 + a.Item4).MultType2(b.Item1 + b.Item4)));
+            }
+
+
 
             var p1 = (a.Item1 + a.Item4).MultType2(b.Item1 + b.Item4);
             var p2 = (a.Item3 + a.Item4).MultType2(b.Item1);
