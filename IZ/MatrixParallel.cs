@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace IZ
@@ -11,10 +13,11 @@ namespace IZ
     {
         private Vector<float>[] _mas;
         private int _size;
-        private readonly object _locker = new object();
-        private static readonly int SimdSize = Vector<float>.Count; 
+        private static readonly object _locker = new object();
+        private static readonly int SimdSize = Vector<float>.Count;
         private float _maxNumber;
         private int _maxNumberIndex;
+        private static volatile int depthRemaining;
 
         public MatrixParallel()
         {
@@ -37,14 +40,14 @@ namespace IZ
             get
             {
                 var index = row * _size + col;
-                return _mas[index/SimdSize][index%SimdSize];
+                return _mas[index / SimdSize][index % SimdSize];
             }
             set
             {
                 int index = row * _size + col;
                 var newVectorArray = new float[SimdSize];
-                _mas[index/SimdSize].CopyTo(newVectorArray);
-                newVectorArray[index%SimdSize] = value;
+                _mas[index / SimdSize].CopyTo(newVectorArray);
+                newVectorArray[index % SimdSize] = value;
                 _mas[index / SimdSize] = new Vector<float>(newVectorArray);
             }
         }
@@ -194,11 +197,11 @@ namespace IZ
 
         public MatrixParallel MultType2(MatrixParallel m)
         {
-            var depth = Environment.ProcessorCount;
-            return MultType2Parallel(m, ref depth);
+            depthRemaining = Environment.ProcessorCount;
+            return MultType2Parallel(m);
         }
 
-        private MatrixParallel MultType2Parallel(MatrixParallel m, ref int depthRemaining)
+        private MatrixParallel MultType2Parallel(MatrixParallel m)
         {
             if (_size <= 256)
             {
@@ -210,30 +213,66 @@ namespace IZ
             var b = m.DevideMatrix();
 
             var p = new MatrixParallel[7];
-            var tasks = new Dictionary<int, Task>();
+            var c = new MatrixParallel[4];
+            var tasks = new ConcurrentDictionary<int, Task>();
 
-            if (depthRemaining != 0)
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => (a.Item1 + a.Item4).MultType2Parallel(b.Item1 + b.Item4), 1);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => (a.Item3 + a.Item4).MultType2Parallel(b.Item1), 2);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => a.Item1.MultType2Parallel(b.Item2 - b.Item4), 3);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => a.Item4.MultType2Parallel(b.Item3 - b.Item1), 4);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => (a.Item1 + a.Item2).MultType2Parallel(b.Item4), 5);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => (a.Item3 - a.Item1).MultType2Parallel(b.Item1 + b.Item2), 6);
+            CheckOpportunityRunAsyncOrRunSync(tasks, p, () => (a.Item2 - a.Item4).MultType2Parallel(b.Item3 + b.Item4), 7);
+
+            foreach (var task in tasks)
             {
-                depthRemaining--;
-                tasks.Add(1, Task.Run(() => (a.Item1 + a.Item4).MultType2(b.Item1 + b.Item4)));
+                task.Value.Wait();
             }
 
+            CheckOpportunityRunAsyncOrRunSync(tasks, c, () => p[0] + p[3] - p[4] + p[6], 1);
+            CheckOpportunityRunAsyncOrRunSync(tasks, c, () => p[2] + p[4], 2);
+            CheckOpportunityRunAsyncOrRunSync(tasks, c, () => p[1] + p[3], 3);
+            CheckOpportunityRunAsyncOrRunSync(tasks, c, () => p[0] - p[1] + p[2] + p[5], 4);
 
+            foreach (var task in tasks)
+            {
+                task.Value.Wait();
+            }
 
-            var p1 = (a.Item1 + a.Item4).MultType2(b.Item1 + b.Item4);
-            var p2 = (a.Item3 + a.Item4).MultType2(b.Item1);
-            var p3 = a.Item1.MultType2(b.Item2 - b.Item4);
-            var p4 = a.Item4.MultType2(b.Item3 - b.Item1);
-            var p5 = (a.Item1 + a.Item2).MultType2(b.Item4);
-            var p6 = (a.Item3 - a.Item1).MultType2(b.Item1 + b.Item2);
-            var p7 = (a.Item2 - a.Item4).MultType2(b.Item3 + b.Item4);
+            return Combine(c[0], c[1], c[2], c[3]);
+        }
 
-            var c11 = p1 + p4 - p5 + p7;
-            var c12 = p3 + p5;
-            var c21 = p2 + p4;
-            var c22 = p1 - p2 + p3 + p6;
-
-            return Combine(c11, c12, c21, c22);
+        private void CheckOpportunityRunAsyncOrRunSync(ConcurrentDictionary<int, Task> tasks,
+            MatrixParallel[] p,
+            Func<MatrixParallel> func,
+            int key)
+        {
+            var startSync = false;
+            if (depthRemaining != 0)
+            {
+                lock (_locker)
+                {
+                    if (depthRemaining != 0)
+                    {
+                        depthRemaining--;
+                        tasks[key] = Task.Run(func).ContinueWith(m =>
+                        {
+                            p[key - 1] = m.Result;
+                            Interlocked.Increment(ref depthRemaining);
+                            Task t;
+                            tasks.TryRemove(key, out t);
+                        });
+                    }
+                    else
+                    {
+                        startSync = true;
+                    }
+                }
+            }
+            if (depthRemaining == 0 || startSync)
+            {
+                p[key - 1] = func();
+            }
         }
 
         private Tuple<MatrixParallel, MatrixParallel, MatrixParallel, MatrixParallel> DevideMatrix()
@@ -243,8 +282,8 @@ namespace IZ
             var m2 = new MatrixParallel(halfSize);
             var m3 = new MatrixParallel(halfSize);
             var m4 = new MatrixParallel(halfSize);
-            int k = 0;
-            int lineLength = _size / SimdSize;
+            var k = 0;
+            var lineLength = _size / SimdSize;
             for (int i = 0; i < halfSize; i++)
             {
                 for (int j = 0; j < halfSize / SimdSize; j++)
@@ -263,8 +302,8 @@ namespace IZ
         {
             var res = new MatrixParallel(_size);
             var halfSize = _size / 2;
-            int k = 0;
-            int lineLength = _size / SimdSize;
+            var k = 0;
+            var lineLength = _size / SimdSize;
 
             for (int i = 0; i < halfSize; i++)
             {
