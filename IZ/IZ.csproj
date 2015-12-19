@@ -88,9 +88,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Element.cs" />
     <Compile Include="IMatrix.cs" />
-    <Compile Include="Matrix.cs" />
+    <Compile Include="IMatrixAdditional.cs" />
     <Compile Include="MatrixParallel.cs" />
+    <Compile Include="Matrix.cs" />
+    <Compile Include="MatrixSimdParallel.cs" />
     <Compile Include="MatrixSimd.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

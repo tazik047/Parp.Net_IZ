@@ -20,42 +20,48 @@ namespace IZ
             var MATRIX_SIZE = 64;
             Console.WriteLine(Vector<float>.Count == 4 ? "SSE включено" : "AVX включено");
 
-            while (MATRIX_SIZE <= 2048)
+            while (MATRIX_SIZE <= 512)
             {
                 Console.WriteLine("Размер матрицы: {0}", MATRIX_SIZE);
 
                 float[] masNumbers1 = new float[MATRIX_SIZE*MATRIX_SIZE];
                 float[] masNumbers2 = new float[MATRIX_SIZE * MATRIX_SIZE];
-                float[] vector = new float[MATRIX_SIZE * MATRIX_SIZE];
+                float[] vector = new float[MATRIX_SIZE];
 
-                FillMas(masNumbers1, rnd, MATRIX_SIZE);
-                FillMas(masNumbers2, rnd, MATRIX_SIZE);
-                FillMas(vector, rnd, MATRIX_SIZE);
+                FillMas(masNumbers1, rnd);
+                FillMas(masNumbers2, rnd);
+                FillMas(vector, rnd);
 
                 Console.WriteLine("Без SIMD:");
                 TestMax<Matrix>(MATRIX_SIZE, masNumbers1);
                 Console.WriteLine("С SIMD:");
                 TestMax<MatrixSimd>(MATRIX_SIZE, masNumbers1);
-                Console.WriteLine("Параллельное выполнение:");
+                Console.WriteLine("Параллельное выполнение(без SIMD):");
                 TestMax<MatrixParallel>(MATRIX_SIZE, masNumbers1);
+                Console.WriteLine("Параллельное выполнение(SIMD):");
+                TestMax<MatrixSimdParallel>(MATRIX_SIZE, masNumbers1);
                 PrintSeparate();
 
                 Console.WriteLine("Без SIMD:");
                 var res1 = TestMultVector<Matrix>(MATRIX_SIZE, masNumbers1, vector);
                 Console.WriteLine("С SIMD:");
                 var res2 = TestMultVector<MatrixSimd>(MATRIX_SIZE, masNumbers1, vector);
-                Console.WriteLine("Параллельное выполнение:");
+                Console.WriteLine("Параллельное выполнение(без SIMD):");
                 var res3 = TestMultVector<MatrixParallel>(MATRIX_SIZE, masNumbers1, vector);
-                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res1, res3) ? "" : "НЕ ");
+                Console.WriteLine("Параллельное выполнение(SIMD):");
+                var res4 = TestMultVector<MatrixSimdParallel>(MATRIX_SIZE, masNumbers1, vector);
+                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res3, res4) && Equals(res3, res1) ? "" : "НЕ ");
                 PrintSeparate();
 
                 Console.WriteLine("Без SIMD:");
                 res1 = TestMultiply<Matrix>(MATRIX_SIZE, masNumbers1, masNumbers2);
                 Console.WriteLine("С SIMD:");
                 res2 = TestMultiply<MatrixSimd>(MATRIX_SIZE, masNumbers1, masNumbers2);
-                Console.WriteLine("Параллельное выполнение:");
+                Console.WriteLine("Параллельное выполнение(без SIMD):");
                 res3 = TestMultiply<MatrixParallel>(MATRIX_SIZE, masNumbers1, masNumbers2);
-                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res1, res3) ? "" : "НЕ ");
+                Console.WriteLine("Параллельное выполнение(SIMD):");
+                res4 = TestMultiply<MatrixSimdParallel>(MATRIX_SIZE, masNumbers1, masNumbers2);
+                Console.WriteLine("Результаты {0}равны", Equals(res1, res2) && Equals(res3, res4) && Equals(res1, res3) ? "" : "НЕ ");
                 PrintSeparate();
                 PrintSeparate();
                 
@@ -70,9 +76,9 @@ namespace IZ
             Console.WriteLine("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
         }
 
-        public static void FillMas(float[] mas, Random rnd, int size)
+        public static void FillMas(float[] mas, Random rnd)
         {
-            for (int i = 0; i < size * size; i++)
+            for (int i = 0; i < mas.Length; i++)
             {
                 mas[i] = (float)rnd.NextDouble() * 1000;
             }
@@ -93,6 +99,18 @@ namespace IZ
                 m3 = m1.MultType1(m2);
             });
             Console.WriteLine("Время для умножения 1 способом: {0} (мс)", minMilliseconds);
+
+            if (m1 is IMatrixAdditional<T>)
+            {
+                var m1Additional = (IMatrixAdditional<T>) m1;
+                T m3Additional = default(T);
+                countPerfomance(() =>
+                {
+                    m3Additional = m1Additional.MultType1OtherMethod(m2);
+                });
+                Console.WriteLine("Время для умножения 1 способом (2 вариант): {0} (мс)", minMilliseconds);
+                Console.WriteLine("Матрицы {0}равны.", Equals(m3.ToArray(), m3Additional.ToArray()) ? "" : "НЕ ");
+            }
 
             countPerfomance(() =>
             {
