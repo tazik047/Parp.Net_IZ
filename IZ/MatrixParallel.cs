@@ -26,23 +26,6 @@ namespace IZ
             _mas = new float[size*size];
         }
 
-        /*public float Max(out int row, out int col)
-        {
-            var max = float.MinValue;
-            row = -1;
-            for (int i = 0; i < _size*_size; i++)
-            {
-                if (_mas[i] > max)
-                {
-                    max = _mas[i];
-                    row = i;
-                }
-            }
-            col = row % _size;
-            row /= _size;
-            return max;
-        }*/
-
         public float Max(out int row, out int col)
         {
             _maxNumber = float.MinValue;
@@ -85,20 +68,6 @@ namespace IZ
             }
         }
 
-        /*public float[] Mult(float[] vector)
-        {
-            var res = new float[_size];
-            int i = 0;
-            for (var k = 0; k < _size;k++)
-            {
-                for (int j = 0; j < _size; j++)
-                {
-                    res[k] += _mas[i++]*vector[j];
-                }
-            }
-            return res;
-        }*/
-
         public float[] Mult(float[] v)
         {
             var res = new float[_size];
@@ -129,23 +98,6 @@ namespace IZ
                 res[k] = sum;
             }
         }
-
-        /*public MatrixParallel MultType1(MatrixParallel m)
-        {
-            var result = new MatrixParallel(_size);
-            for (var i = 0; i < _size; i++)
-            {
-                for (var j = 0; j < _size; j++)
-                {
-                    result[i, j] = 0;
-                    for (var k = 0; k < _size; k++)
-                    {
-                        result[i, j] += this[i, k]*m[k, j];
-                    }
-                }
-            }
-            return result;
-        }*/
 
         public MatrixParallel MultType1(MatrixParallel m)
         {
@@ -220,32 +172,6 @@ namespace IZ
                 }
             }
         }
-
-        /// <summary>
-        /// Алгоритм Штрассена
-        /// </summary>
-        /*public MatrixParallel MultType2(MatrixParallel m)
-        {
-            if (_size <= 32)
-                return MultType1(m);
-            var a = DevideMatrix();
-            var b = m.DevideMatrix();
-
-            var p1 = (a.Item1 + a.Item4).MultType2(b.Item1 + b.Item4);
-            var p2 = (a.Item3 + a.Item4).MultType2(b.Item1);
-            var p3 = a.Item1.MultType2(b.Item2 - b.Item4);
-            var p4 = a.Item4.MultType2(b.Item3 - b.Item1);
-            var p5 = (a.Item1 + a.Item2).MultType2(b.Item4);
-            var p6 = (a.Item3 - a.Item1).MultType2(b.Item1 + b.Item2);
-            var p7 = (a.Item2 - a.Item4).MultType2(b.Item3 + b.Item4);
-
-            var c11 = p1 + p4 - p5 + p7;
-            var c12 = p3 + p5;
-            var c21 = p2 + p4;
-            var c22 = p1 + p3 - p2 + p6;
-
-            return Combine(c11, c12, c21, c22);
-        }*/
 
         public MatrixParallel MultType2(MatrixParallel m)
         {
