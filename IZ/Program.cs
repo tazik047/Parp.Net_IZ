@@ -20,7 +20,7 @@ namespace IZ
             var MATRIX_SIZE = 64;
             Console.WriteLine(Vector<float>.Count == 4 ? "SSE включено" : "AVX включено");
 
-            while (MATRIX_SIZE <= 512)
+            while (MATRIX_SIZE <= 2048)
             {
                 Console.WriteLine("Размер матрицы: {0}", MATRIX_SIZE);
 
